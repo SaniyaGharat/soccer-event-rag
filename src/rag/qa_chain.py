@@ -61,8 +61,7 @@ class SoccerQAChain:
     def _build_chain(self):
         """Builds LCEL RAG chain."""
         return (
-            {"context": self._format_docs, "question": RunnablePassthrough()}
-            | self.prompt
+            self.prompt
             | self.llm
             | StrOutputParser()
         )
@@ -84,8 +83,8 @@ class SoccerQAChain:
         if not docs:
             return "No relevant soccer match events were found for your query.", []
 
-        # Generate answer with LCEL chain
-        answer = self.chain.invoke(question)
+        formatted_context = self._format_docs(docs)
+        answer = self.chain.invoke({"context": formatted_context, "question": question})
 
         return answer, docs
 
