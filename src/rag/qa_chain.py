@@ -54,8 +54,9 @@ class SoccerQAChain:
             except Exception as e:
                 print(f"[!] Ollama initialization failed: {e}. Falling back to local model.")
 
-        # Default local lightweight synthesis LLM / Fallback wrapped as Runnable
-        return LocalMatchAnalystLLM()
+        # Default local lightweight synthesis LLM / Fallback explicitly wrapped as RunnableLambda
+        analyst = LocalMatchAnalystLLM()
+        return RunnableLambda(analyst.invoke)
 
     def _build_chain(self):
         """Builds LCEL RAG chain."""
@@ -92,8 +93,11 @@ class SoccerQAChain:
 class LocalMatchAnalystLLM(Runnable):
     """
     Lightweight deterministic local LLM synthesizer for offline demo execution.
-    Subclasses Runnable to seamlessly compose within LangChain LCEL pipelines.
+    Subclasses Runnable and implements __call__ for full LCEL pipeline compatibility.
     """
+
+    def __call__(self, input: Any, config: Optional[Any] = None) -> str:
+        return self.invoke(input, config)
 
     def invoke(self, input: Any, config: Optional[Any] = None) -> str:
         prompt_text = str(input.to_string()) if hasattr(input, "to_string") else str(input)
