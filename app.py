@@ -144,19 +144,19 @@ def draw_tactical_minimap(tracking_path, start_sec, end_sec):
     
     last_frame = clip_frames[-1]
     fig = go.Figure()
-    
-    # 1. Draw Green Pitch Background and Boundaries
-    fig.add_shape(type="rect", x0=0, y0=0, x1=105, y1=68, fillcolor="#1E391E", opacity=1.0, line=dict(color="white", width=2))
+
+    # 1. Draw Green Pitch Background and Boundaries (layer="below")
+    fig.add_shape(type="rect", x0=0, y0=0, x1=105, y1=68, fillcolor="#1E391E", opacity=1.0, line=dict(color="white", width=2), layer="below")
     # Center Line
-    fig.add_shape(type="line", x0=52.5, y0=0, x1=52.5, y1=68, line=dict(color="white", width=2))
+    fig.add_shape(type="line", x0=52.5, y0=0, x1=52.5, y1=68, line=dict(color="white", width=2), layer="below")
     # Center Circle
-    fig.add_shape(type="circle", x0=52.5-9.15, y0=34-9.15, x1=52.5+9.15, y1=34+9.15, line=dict(color="white", width=2))
+    fig.add_shape(type="circle", x0=52.5-9.15, y0=34-9.15, x1=52.5+9.15, y1=34+9.15, line=dict(color="white", width=2), layer="below")
     # Goal Boxes
-    fig.add_shape(type="rect", x0=0, y0=24.84, x1=5.5, y1=43.16, line=dict(color="white", width=1))
-    fig.add_shape(type="rect", x0=99.5, y0=24.84, x1=105, y1=43.16, line=dict(color="white", width=1))
+    fig.add_shape(type="rect", x0=0, y0=24.84, x1=5.5, y1=43.16, line=dict(color="white", width=1), layer="below")
+    fig.add_shape(type="rect", x0=99.5, y0=24.84, x1=105, y1=43.16, line=dict(color="white", width=1), layer="below")
     # Penalty Boxes
-    fig.add_shape(type="rect", x0=0, y0=13.84, x1=16.5, y1=54.16, line=dict(color="white", width=2))
-    fig.add_shape(type="rect", x0=88.5, y0=13.84, x1=105, y1=54.16, line=dict(color="white", width=2))
+    fig.add_shape(type="rect", x0=0, y0=13.84, x1=16.5, y1=54.16, line=dict(color="white", width=2), layer="below")
+    fig.add_shape(type="rect", x0=88.5, y0=13.84, x1=105, y1=54.16, line=dict(color="white", width=2), layer="below")
     
     # 2. Extract Trajectory Coordinate Lists
     ball_path_x = []
