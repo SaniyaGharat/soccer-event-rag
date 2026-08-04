@@ -4,12 +4,11 @@ LangChain QA Chain Module (LCEL)
 Constructs RAG chain synthesizing natural-language answers with explicit timestamp citations.
 """
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from langchain_core.prompts import PromptTemplate
 from langchain_core.documents import Document
-from langchain_core.language_models.fake import FakeListLLM
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from src.rag.retriever import EventRetriever
 
 
@@ -39,7 +38,7 @@ class SoccerQAChain:
         self.prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
         self.chain = self._build_chain()
 
-    def _initialize_llm(self):
+    def _initialize_llm(self) -> Runnable:
         """Initializes swappable LLM backend based on provider configuration."""
         if self.provider == "openai":
             try:
@@ -55,7 +54,7 @@ class SoccerQAChain:
             except Exception as e:
                 print(f"[!] Ollama initialization failed: {e}. Falling back to local model.")
 
-        # Default local lightweight synthesis LLM / Fallback
+        # Default local lightweight synthesis LLM / Fallback wrapped as Runnable
         return LocalMatchAnalystLLM()
 
     def _build_chain(self):
@@ -85,20 +84,20 @@ class SoccerQAChain:
             return "No relevant soccer match events were found for your query.", []
 
         # Generate answer with LCEL chain
-        context_str = self._format_docs(docs)
         answer = self.chain.invoke(question)
 
         return answer, docs
 
 
-class LocalMatchAnalystLLM:
+class LocalMatchAnalystLLM(Runnable):
     """
     Lightweight deterministic local LLM synthesizer for offline demo execution.
-    Synthesizes crisp tactical responses from retrieved event logs with exact timestamps.
+    Subclasses Runnable to seamlessly compose within LangChain LCEL pipelines.
     """
 
-    def invoke(self, prompt: Any) -> str:
-        prompt_text = str(prompt)
+    def invoke(self, input: Any, config: Optional[Any] = None) -> str:
+        prompt_text = str(input.to_string()) if hasattr(input, "to_string") else str(input)
+
         # Extract context block from prompt
         if "Retrieved Match Event Logs:" in prompt_text:
             context_block = prompt_text.split("Retrieved Match Event Logs:")[1].split("User Question:")[0].strip()
