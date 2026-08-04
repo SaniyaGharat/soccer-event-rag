@@ -144,10 +144,16 @@ class EventRetriever:
         # 3. Dense search with Chroma (applying metadata filters on the database level where possible)
         dense_filter = {}
         if merged_filters:
+            conditions = []
             if "team_id" in merged_filters:
-                dense_filter["team_id"] = merged_filters["team_id"]
+                conditions.append({"team_id": merged_filters["team_id"]})
             if "event_type" in merged_filters:
-                dense_filter["event_type"] = merged_filters["event_type"]
+                conditions.append({"event_type": merged_filters["event_type"]})
+            
+            if len(conditions) == 1:
+                dense_filter = conditions[0]
+            elif len(conditions) > 1:
+                dense_filter = {"$and": conditions}
 
         if dense_filter:
             # Query dense database with metadata filter
