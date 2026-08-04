@@ -2,7 +2,7 @@
 LangChain QA Chain Module (LCEL)
 
 Constructs RAG chain synthesizing natural-language answers with explicit timestamp citations.
-Supports swappable LLM providers (Local, HuggingFace, Ollama, OpenAI).
+Supports swappable LLM providers (Local, HuggingFace, Ollama, OpenAI) with runtime fault-tolerance.
 """
 
 from typing import List, Dict, Any, Tuple, Optional
@@ -28,14 +28,14 @@ Detailed Tactical Answer (including exact timestamps):"""
 
 class SoccerQAChain:
     """
-    LangChain QA Chain using LCEL with swappable LLM backends.
+    LangChain QA Chain using LCEL with swappable LLM backends & runtime fallback.
     """
 
     def __init__(self, retriever: EventRetriever, provider: str = "local", model_name: str = "default"):
         self.retriever = retriever
         self.provider = provider
         self.model_name = model_name
-        self.active_provider_name = "Local Synthesizer"
+        self.active_provider_name = "Local Match Analyst (Offline)"
         self.llm = self._initialize_llm()
         self.prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
         self.chain = self._build_chain()
@@ -48,7 +48,7 @@ class SoccerQAChain:
                 self.active_provider_name = f"OpenAI ({self.model_name if self.model_name != 'default' else 'gpt-3.5-turbo'})"
                 return ChatOpenAI(model_name=self.model_name if self.model_name != "default" else "gpt-3.5-turbo", temperature=0.1)
             except Exception as e:
-                print(f"[!] OpenAI initialization failed/unconfigured: {e}. Falling back to local model.")
+                print(f"[!] OpenAI initialization failed: {e}. Falling back to local model.")
 
         elif self.provider == "ollama":
             try:
@@ -94,7 +94,7 @@ class SoccerQAChain:
 
     def answer_question(self, question: str) -> Tuple[str, List[Document]]:
         """
-        Executes QA chain for natural language query.
+        Executes QA chain for natural language query with runtime fault tolerance.
         Returns (synthesized_answer, list_of_retrieved_docs).
         """
         docs = self.retriever.retrieve(question)
@@ -103,7 +103,16 @@ class SoccerQAChain:
             return "No relevant soccer match events were found for your query.", []
 
         formatted_context = self._format_docs(docs)
-        answer = self.chain.invoke({"context": formatted_context, "question": question})
+
+        try:
+            answer = self.chain.invoke({"context": formatted_context, "question": question})
+        except Exception as e:
+            err_msg = str(e)
+            print(f"[!] Primary LLM provider ({self.provider}) execution failed: {err_msg}. Falling back to Local Synthesizer.")
+            self.active_provider_name = f"{self.provider.upper()} (Unavailable: {err_msg[:40]}...) ➔ Fallback: Local Analyst"
+            fallback_llm = LocalMatchAnalystLLM()
+            prompt_str = self.prompt.format(context=formatted_context, question=question)
+            answer = fallback_llm.invoke(prompt_str)
 
         return answer, docs
 
