@@ -1,0 +1,92 @@
+[
+  {
+    "id": "Q1",
+    "query": "Show me when Team A crossed into the penalty box",
+    "type": "specific_positive",
+    "is_negative_query": false,
+    "expected_event_type": "penalty_box_entry",
+    "expected_start_sec": 40.0,
+    "expected_end_sec": 50.0
+  },
+  {
+    "id": "Q2",
+    "query": "Find turnovers or lost possession in the defensive third",
+    "type": "specific_positive",
+    "is_negative_query": false,
+    "expected_event_type": "turnover",
+    "expected_start_sec": 85.0,
+    "expected_end_sec": 95.0
+  },
+  {
+    "id": "Q3",
+    "query": "When was Team A subjected to high pressing sequence by defenders?",
+    "type": "specific_positive",
+    "is_negative_query": false,
+    "expected_event_type": "high_press_sequence",
+    "expected_start_sec": 130.0,
+    "expected_end_sec": 145.0
+  },
+  {
+    "id": "Q4",
+    "query": "Find offside situations involving Player 9",
+    "type": "specific_positive",
+    "is_negative_query": false,
+    "expected_event_type": "proxy_offside",
+    "expected_start_sec": 185.0,
+    "expected_end_sec": 195.0
+  },
+  {
+    "id": "Q5",
+    "query": "Were there any dangerous moments near the goal area?",
+    "type": "vague",
+    "is_negative_query": false,
+    "expected_event_type": "penalty_box_entry",
+    "expected_start_sec": 40.0,
+    "expected_end_sec": 50.0
+  },
+  {
+    "id": "Q6",
+    "query": "Show intense defensive pressure by the opposition",
+    "type": "vague",
+    "is_negative_query": false,
+    "expected_event_type": "high_press_sequence",
+    "expected_start_sec": 130.0,
+    "expected_end_sec": 145.0
+  },
+  {
+    "id": "Q7",
+    "query": "Find completed passes followed by turnover in defensive third",
+    "type": "compound",
+    "is_negative_query": false,
+    "expected_event_type": "turnover",
+    "expected_start_sec": 85.0,
+    "expected_end_sec": 95.0
+  },
+  {
+    "id": "Q8",
+    "query": "Was there a second yellow card or red card given to any player?",
+    "type": "negative",
+    "is_negative_query": true,
+    "expected_event_type": null,
+    "expected_start_sec": null,
+    "expected_end_sec": null
+  },
+  {
+    "id": "Q9",
+    "query": "Show VAR handball penalty review inside the box",
+    "type": "negative",
+    "is_negative_query": true,
+    "expected_event_type": null,
+    "expected_start_sec": null,
+    "expected_end_sec": null
+  },
+  {
+    "id": "Q10",
+    "query": "Find corner kick taken from the left flag",
+    "type": "negative",
+    "is_negative_query": true,
+    "expected_event_type": null,
+    "expected_start_sec": null,
+    "expected_end_sec": null
+  }
+]

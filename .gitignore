@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data (large generated files — regenerate with mock_data_gen.py)
+data/sample_tracking.json
+data/sample_match.mp4
+data/chroma_db/
+data/test_chroma_db/
+data/clips/
+
+# Keep these tracked
+!data/pitch_config.json
+!data/ground_truth_events.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Pytest
+.pytest_cache/
+
+# Streamlit
+.streamlit/
+
+# Misc
+*.log

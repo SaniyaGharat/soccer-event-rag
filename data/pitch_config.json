@@ -1,0 +1,13 @@
+{
+  "pitch_length_meters": 105.0,
+  "pitch_width_meters": 68.0,
+  "zones": {
+    "Defensive Third": {"x_min": 0.0, "x_max": 35.0, "y_min": 0.0, "y_max": 68.0},
+    "Midfield": {"x_min": 35.0, "x_max": 70.0, "y_min": 0.0, "y_max": 68.0},
+    "Attacking Third": {"x_min": 70.0, "x_max": 105.0, "y_min": 0.0, "y_max": 68.0},
+    "Defensive Penalty Box": {"x_min": 0.0, "x_max": 16.5, "y_min": 13.84, "y_max": 54.16},
+    "Attacking Penalty Box": {"x_min": 88.5, "x_max": 105.0, "y_min": 13.84, "y_max": 54.16},
+    "Left Flank": {"x_min": 0.0, "x_max": 105.0, "y_min": 0.0, "y_max": 20.0},
+    "Right Flank": {"x_min": 0.0, "x_max": 105.0, "y_min": 48.0, "y_max": 68.0}
+  }
+}
