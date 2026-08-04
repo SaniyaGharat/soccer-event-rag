@@ -302,6 +302,25 @@ def _render_synthetic_video(video_path: str, frames: List[Dict[str, Any]], fps: 
         out.write(img)
 
     out.release()
+
+    # Convert to H.264 (yuv420p) for HTML5 browser player compatibility
+    try:
+        import subprocess
+        from src.video.ffmpeg_clipper import get_ffmpeg_binary_path
+        ffmpeg_exe = get_ffmpeg_binary_path()
+        if ffmpeg_exe:
+            temp_path = str(video_path) + ".h264.mp4"
+            cmd = [
+                ffmpeg_exe, "-y", "-i", str(video_path),
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", temp_path
+            ]
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=30)
+            if res.returncode == 0 and Path(temp_path).exists():
+                Path(video_path).unlink(missing_ok=True)
+                Path(temp_path).rename(video_path)
+    except Exception as e:
+        print(f"[!] H.264 re-encoding warning: {e}")
+
     print(f"[+] Rendered sample match video to {video_path}")
 
 
