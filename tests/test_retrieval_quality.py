@@ -47,7 +47,7 @@ def run_retrieval_quality_evaluation(
     print("[3/4] Indexing Events in Chroma Vector DB...")
     vstore_mgr = VectorStoreManager(persist_directory="data/test_chroma_db", collection_name="eval_collection")
     vstore = vstore_mgr.index_documents(docs, reset=True)
-    retriever = EventRetriever(vector_store=vstore)
+    retriever = EventRetriever(vector_store=vstore, documents=docs)
 
     # 4. Load Ground Truth Benchmark
     gt_file = Path(ground_truth_path)
