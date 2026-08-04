@@ -177,6 +177,7 @@ def main():
 
         with col_left:
             st.subheader("🤖 Tactical Answer & Timestamps")
+            st.caption(f"Active LLM Engine: **{qa_chain.active_provider_name}**")
             with st.spinner("Synthesizing answer with LangChain LCEL..."):
                 answer, retrieved_docs = qa_chain.answer_question(user_query)
 

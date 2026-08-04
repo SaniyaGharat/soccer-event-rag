@@ -2,13 +2,14 @@
 LangChain QA Chain Module (LCEL)
 
 Constructs RAG chain synthesizing natural-language answers with explicit timestamp citations.
+Supports swappable LLM providers (Local, HuggingFace, Ollama, OpenAI).
 """
 
 from typing import List, Dict, Any, Tuple, Optional
 from langchain_core.prompts import PromptTemplate
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from langchain_core.runnables import Runnable, RunnableLambda
 from src.rag.retriever import EventRetriever
 
 
@@ -27,13 +28,14 @@ Detailed Tactical Answer (including exact timestamps):"""
 
 class SoccerQAChain:
     """
-    LangChain QA Chain using LCEL.
+    LangChain QA Chain using LCEL with swappable LLM backends.
     """
 
     def __init__(self, retriever: EventRetriever, provider: str = "local", model_name: str = "default"):
         self.retriever = retriever
         self.provider = provider
         self.model_name = model_name
+        self.active_provider_name = "Local Synthesizer"
         self.llm = self._initialize_llm()
         self.prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
         self.chain = self._build_chain()
@@ -43,18 +45,35 @@ class SoccerQAChain:
         if self.provider == "openai":
             try:
                 from langchain_openai import ChatOpenAI
-                return ChatOpenAI(model_name=self.model_name, temperature=0.1)
+                self.active_provider_name = f"OpenAI ({self.model_name if self.model_name != 'default' else 'gpt-3.5-turbo'})"
+                return ChatOpenAI(model_name=self.model_name if self.model_name != "default" else "gpt-3.5-turbo", temperature=0.1)
             except Exception as e:
-                print(f"[!] OpenAI initialization failed: {e}. Falling back to local model.")
+                print(f"[!] OpenAI initialization failed/unconfigured: {e}. Falling back to local model.")
 
         elif self.provider == "ollama":
             try:
                 from langchain_community.llms import Ollama
-                return Ollama(model=self.model_name)
+                self.active_provider_name = f"Ollama ({self.model_name if self.model_name != 'default' else 'llama3'})"
+                return Ollama(model=self.model_name if self.model_name != "default" else "llama3")
             except Exception as e:
                 print(f"[!] Ollama initialization failed: {e}. Falling back to local model.")
 
+        elif self.provider == "huggingface":
+            try:
+                from langchain_community.llms import HuggingFacePipeline
+                model_id = self.model_name if self.model_name != "default" else "google/flan-t5-base"
+                self.active_provider_name = f"HuggingFace ({model_id})"
+                hf_llm = HuggingFacePipeline.from_model_id(
+                    model_id=model_id,
+                    task="text-generation",
+                    pipeline_kwargs={"max_new_tokens": 256, "temperature": 0.1}
+                )
+                return hf_llm
+            except Exception as e:
+                print(f"[!] HuggingFace Pipeline initialization failed: {e}. Falling back to local model.")
+
         # Default local lightweight synthesis LLM / Fallback explicitly wrapped as RunnableLambda
+        self.active_provider_name = "Local Match Analyst (Offline)"
         analyst = LocalMatchAnalystLLM()
         return RunnableLambda(analyst.invoke)
 
