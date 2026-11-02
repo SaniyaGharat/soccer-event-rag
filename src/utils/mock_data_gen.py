@@ -7,6 +7,7 @@ Generates:
 3. `data/sample_match.mp4`: Synthetic soccer match video clip with rendered pitch, players, ball, and timestamp display.
 """
 
+import os
 import json
 import math
 import random
@@ -247,15 +248,24 @@ def generate_synthetic_match_data(
         }
     ]
 
-    # Save Tracking JSON
+    # Save Tracking JSON (Atomically to prevent read race conditions)
     Path(output_tracking_path).parent.mkdir(parents=True, exist_ok=True)
-    with open(output_tracking_path, "w", encoding="utf-8") as f:
+    temp_tracking = Path(output_tracking_path).with_suffix(".tmp")
+    with open(temp_tracking, "w", encoding="utf-8") as f:
         json.dump({"match_id": "synthetic_match_01", "fps": fps, "frames": frames_data}, f, indent=2)
+    # Atomic replace
+    if os.path.exists(output_tracking_path):
+        os.remove(output_tracking_path)
+    os.rename(str(temp_tracking), str(output_tracking_path))
     print(f"[+] Saved synthetic tracking data to {output_tracking_path}")
 
-    # Save Ground Truth JSON
-    with open(output_ground_truth_path, "w", encoding="utf-8") as f:
+    # Save Ground Truth JSON (Atomically)
+    temp_gt = Path(output_ground_truth_path).with_suffix(".tmp")
+    with open(temp_gt, "w", encoding="utf-8") as f:
         json.dump(ground_truth_log, f, indent=2)
+    if os.path.exists(output_ground_truth_path):
+        os.remove(output_ground_truth_path)
+    os.rename(str(temp_gt), str(output_ground_truth_path))
     print(f"[+] Saved ground-truth benchmark events to {output_ground_truth_path}")
 
     # Render Sample Match MP4 Video if CV2 is installed
@@ -273,7 +283,7 @@ def _render_synthetic_video(video_path: str, frames: List[Dict[str, Any]], fps: 
 
     out = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
 
-    for f in frames[::2]:
+    for f in frames:
         img = np.full((height, width, 3), (34, 139, 34), dtype=np.uint8)  # Pitch Green
 
         margin = 30

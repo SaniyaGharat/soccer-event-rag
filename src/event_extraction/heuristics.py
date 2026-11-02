@@ -92,11 +92,11 @@ class EventExtractor:
         events.extend(turnover_events)
 
         # 2. Penalty Box Entries
-        box_events = self._extract_penalty_box_entries(frames)
+        box_events = self._extract_penalty_box_entries(frames, confirmed_possessions)
         events.extend(box_events)
 
         # 3. Shots on Goal
-        shot_events = self._extract_shots_on_goal(frames)
+        shot_events = self._extract_shots_on_goal(frames, confirmed_possessions)
         events.extend(shot_events)
 
         # 4. Simplified Offside Proxy
@@ -202,7 +202,11 @@ class EventExtractor:
 
         return passes, turnovers
 
-    def _extract_penalty_box_entries(self, frames: List[FrameData]) -> List[Event]:
+    def _extract_penalty_box_entries(
+        self,
+        frames: List[FrameData],
+        possessions: Optional[List[Optional[Tuple[str, int]]]] = None
+    ) -> List[Event]:
         box_events: List[Event] = []
         in_box = False
         start_frame: Optional[FrameData] = None
@@ -222,6 +226,17 @@ class EventExtractor:
                 dur = end_frame.timestamp_sec - start_frame.timestamp_sec
 
                 if dur >= 1.0:  # Box entry duration
+                    # Infer team in possession
+                    box_team = "Team A"
+                    if possessions and start_frame.frame_index < len(possessions):
+                        for off in range(-5, 6):
+                            idx = start_frame.frame_index + off
+                            if 0 <= idx < len(possessions) and possessions[idx]:
+                                box_team = possessions[idx][0]
+                                break
+                    elif start_frame.ball:
+                        box_team = "Team A" if start_frame.ball.x > 52.5 else "Team B"
+
                     box_events.append(Event(
                         event_id=f"box_entry_{uuid.uuid4().hex[:8]}",
                         event_type=EventType.PENALTY_BOX_ENTRY,
@@ -231,15 +246,20 @@ class EventExtractor:
                         end_timestamp=end_frame.timestamp_sec,
                         start_timestamp_str=start_frame.timestamp_str,
                         end_timestamp_str=end_frame.timestamp_str,
+                        team_id=box_team,
                         pitch_zones=zones,
-                        text_description=f"[{start_frame.timestamp_str} - {end_frame.timestamp_str}] Ball crossed into the penalty box area."
+                        text_description=f"[{start_frame.timestamp_str} - {end_frame.timestamp_str}] {box_team} entered the penalty box area."
                     ))
                 in_box = False
                 start_frame = None
 
         return box_events
 
-    def _extract_shots_on_goal(self, frames: List[FrameData]) -> List[Event]:
+    def _extract_shots_on_goal(
+        self,
+        frames: List[FrameData],
+        possessions: Optional[List[Optional[Tuple[str, int]]]] = None
+    ) -> List[Event]:
         shots: List[Event] = []
         for i in range(len(frames) - 5):
             f1 = frames[i]
@@ -258,6 +278,14 @@ class EventExtractor:
                 moving_to_defensive_goal = (f5.ball.x < 15.0 and f5.ball.x < f1.ball.x)
 
                 if moving_to_attacking_goal or moving_to_defensive_goal:
+                    shot_team = "Team A" if moving_to_attacking_goal else "Team B"
+                    if possessions and f1.frame_index < len(possessions):
+                        for off in range(-3, 4):
+                            idx = f1.frame_index + off
+                            if 0 <= idx < len(possessions) and possessions[idx]:
+                                shot_team = possessions[idx][0]
+                                break
+
                     zones = get_pitch_zone(f1.ball.x, f1.ball.y, self.pitch_config)
                     shots.append(Event(
                         event_id=f"shot_{uuid.uuid4().hex[:8]}",
@@ -268,8 +296,9 @@ class EventExtractor:
                         end_timestamp=f5.timestamp_sec,
                         start_timestamp_str=f1.timestamp_str,
                         end_timestamp_str=f5.timestamp_str,
+                        team_id=shot_team,
                         pitch_zones=zones,
-                        text_description=f"[{f1.timestamp_str} - {f5.timestamp_str}] Shot on goal attempt! High-velocity strike ({speed:.1f} m/s) towards goal."
+                        text_description=f"[{f1.timestamp_str} - {f5.timestamp_str}] Shot on goal attempt by {shot_team}! High-velocity strike ({speed:.1f} m/s) towards goal."
                     ))
                     i += 15  # Skip ahead to prevent duplicate shot triggers
         return shots
@@ -353,7 +382,7 @@ class EventExtractor:
 
                 if duration >= 3.0:
                     poss = possessions[start_idx]
-                    pressed_team = poss[0] if poss else "attraction team"
+                    pressed_team = poss[0] if poss else "Team A"
                     zones = get_pitch_zone(start_f.ball.x, start_f.ball.y, self.pitch_config) if start_f.ball else ["Midfield"]
 
                     events.append(Event(
@@ -365,6 +394,7 @@ class EventExtractor:
                         end_timestamp=end_f.timestamp_sec,
                         start_timestamp_str=start_f.timestamp_str,
                         end_timestamp_str=end_f.timestamp_str,
+                        team_id=pressed_team,
                         pitch_zones=zones,
                         text_description=f"[{start_f.timestamp_str} - {end_f.timestamp_str}] High pressing sequence! "
                                          f"Multiple defenders closing down ball carrier ({pressed_team}) in {', '.join(zones)}.",

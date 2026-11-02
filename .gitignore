@@ -39,7 +39,8 @@ desktop.ini
 .pytest_cache/
 
 # Streamlit
-.streamlit/
+.streamlit/*
+!.streamlit/config.toml
 
 # Misc
 *.log

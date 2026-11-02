@@ -92,7 +92,7 @@ class EventRetriever:
             filters["event_type"] = "proxy_offside"
         elif "shot" in query_lower or "goal" in query_lower:
             filters["event_type"] = "shot_on_goal"
-        elif "box entry" in query_lower or "entered the box" in query_lower:
+        elif "box entry" in query_lower or "entered the box" in query_lower or ("box" in query_lower and ("cross" in query_lower or "into" in query_lower or "enter" in query_lower)):
             filters["event_type"] = "penalty_box_entry"
 
         return filters

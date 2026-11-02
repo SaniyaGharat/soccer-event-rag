@@ -60,22 +60,37 @@ class VideoClipper:
         out_filename = clip_name or f"clip_{int(start_sec)}_{int(end_sec)}.mp4"
         out_path = self.output_dir / out_filename
 
+        # If clip already exists and is valid, return immediately to avoid locking open files
+        if out_path.exists() and out_path.stat().st_size > 5000:
+            return str(out_path)
+
         if self.ffmpeg_exe:
+            # Two-stage frame-accurate seeking:
+            # 1. Fast seek to ~1 second before target
+            # 2. Precise decode from the relative offset to exact frame
+            # 3. -movflags +faststart for instantaneous HTML5 video browser playback
+            pre_seek = max(0.0, start_sec - 1.0)
+            rel_seek = start_sec - pre_seek
+
             cmd = [
                 self.ffmpeg_exe,
                 "-y",  # Overwrite output
-                "-ss", f"{start_sec:.2f}",
+                "-ss", f"{pre_seek:.3f}",
                 "-i", str(src),
-                "-t", f"{duration:.2f}",
+                "-ss", f"{rel_seek:.3f}",
+                "-t", f"{duration:.3f}",
                 "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "20",
                 "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
                 "-c:a", "aac",
                 "-avoid_negative_ts", "make_zero",
                 str(out_path)
             ]
             try:
-                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=20)
-                if res.returncode == 0 and out_path.exists():
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=25)
+                if res.returncode == 0 and out_path.exists() and out_path.stat().st_size > 1000:
                     return str(out_path)
                 else:
                     print(f"[!] Ffmpeg process error: {res.stderr}")
